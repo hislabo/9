@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hệ thống quản lý tái khám</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+
+</head>
+<body>
+
+  <!-- Đăng nhập -->
+  <div id="loginScreen" class="login-screen">
+    <div class="login-panel">
+      <div class="mb-4 text-center">
+        <div class="fs-1 mb-3 text-white">HIS PRO </div>
+        <h2 class="text-white">Đăng nhập</h2>
+      </div>
+      <div class="mb-3">
+        <label class="form-label text-white">Email</label>
+        <input id="loginUser" type="email" class="form-control" placeholder="Nhập email đăng nhập" />
+      </div>
+      <div class="mb-4">
+        <label class="form-label text-white">Mật khẩu</label>
+        <input id="loginPassword" type="password" class="form-control" placeholder="Nhập mật khẩu" />
+      </div>
+      <button id="loginButton" class="btn btn-primary w-100">Đăng nhập</button>
+    </div>
+  </div>
+
+  <!-- thanh navbar -->
+  <div id="appWrapper" style="display: none;">
+    <header class="topnav d-flex justify-content-end mb-3">
+      <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center gap-3 right">
+          <div id="currentDate" class="text-muted small"><i class="fa-solid fa-calendar-day me-1"></i> Đang tải...</div>
+          <div id="currentClock" class="fw-semibold"><i class="fa-solid fa-clock me-1"></i> --:--:--</div>
+        </div>
+        <button id="quickRevisitButton" class="btn btn-sm btn-outline-primary d-flex align-items-center gap-2"><i class="fa-solid fa-clock-rotate-left"></i> Tái khám nhanh</button>
+        <button id="topRefreshBtn" type="button" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-2" onclick="window.location.reload()"><i class="fa-solid fa-arrows-rotate"></i> Làm mới</button>
+        <button id="topDeleteBtn" type="button" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-2" onclick="handleTopDelete()"><i class="fa-solid fa-trash"></i> Xoá</button>
+        <button id="topPrintBtn" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-2" onclick="window.print()"><i class="fa-solid fa-print"></i> In ấn</button>
+        <button id="topCalendarBtn" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-2" onclick="openCalendarSection()"><i class="fa-solid fa-calendar-days"></i> Lịch</button>
+        <button id="topPaymentBtn" class="btn btn-sm btn-outline-primary d-flex align-items-center gap-2"><i class="fa-solid fa-credit-card"></i> Thanh toán</button>
+        <button id="themeToggle" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2 ms-2"><i class="fa-solid fa-moon"></i> Dark Mode</button>
+        <button id="topLogoutBtn" class="btn btn-sm btn-danger d-flex align-items-center gap-2"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</button>
+      </div>
+    </header>
+
+    <!-- Thanh sidebar -->
+    <div class="app-shell">
+      <aside class="sidebar">
+      <div class="sidebar-brand mb-5">
+        <div class="d-flex align-items-center gap-3">
+          <div class="brand-icon bg-white text-primary rounded-3 p-2 shadow-sm"><i class="fa-solid fa-hospital-user fa-lg"></i></div>
+          <div>
+            <div class="brand-title">HIS</div>
+            <span class="badge bg-info text-dark"> Pro </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- thẻ menu -->
+      <nav class="nav flex-column sidebar-nav">
+        <a class="nav-link active" href="#dashboardSection"><i class="fa-solid fa-chart-line"></i><span class="nav-label">Dashboard</span></a>
+        <a class="nav-link" href="#receptionSection"><i class="fa-solid fa-user-plus"></i><span class="nav-label">Tiếp nhận</span></a>
+        <a class="nav-link" href="#patientSection"><i class="fa-solid fa-users"></i><span class="nav-label">Bệnh nhân</span></a>
+        <a class="nav-link" href="#resultsSection"><i class="fa-solid fa-file-medical"></i><span class="nav-label">Kết quả</span></a>
+        <a class="nav-link" href="#reminderSection"><i class="fa-solid fa-calendar-check"></i><span class="nav-label">Tái khám</span></a>
+        <a class="nav-link" href="#settingsSection"><i class="fa-solid fa-gear"></i><span class="nav-label">Cài đặt</span></a>
+      </nav>
+      <div class="sidebar-footer mt-auto pt-4">
+        <div class="mb-3">
+          <P class="small text-muted mb-0 white-space-pre">HIS Pro - Bản quyền © 2026</P>
+        </div>
+      </div>
+    </aside>
+
+
+    <main class="content">
+      <section id="dashboardSection" class="mb-4">
+        <div class="mb-3">
+          <h2 class="h4 mb-1">Dashboard</h2>
+        </div>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-5 g-3 mb-4">
+          <div class="col">
+            <div id="todayAppointmentsCard" class="metric-card p-3" style="cursor: pointer;" data-cat="today">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <div>
+                  <p class="text-uppercase text-muted small mb-1">Tái khám hôm nay</p>
+                  <h2 id="todayAppointments" class="mb-0">0</h2>
+                </div>
+                <div class="icon-box bg-primary bg-opacity-10 text-primary"><i class="fa-solid fa-calendar-day fa-lg"></i></div>
+              </div>
+              <p class="text-muted small mb-0">Số bệnh nhân có lịch hôm nay.</p>
+            </div>
+          </div>
+          <div class="col">
+            <div id="weekAppointmentsCard" class="metric-card p-3" style="cursor: pointer;" data-cat="week">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <div>
+                  <p class="text-uppercase text-muted small mb-1">Tái khám tuần này</p>
+                  <h2 id="weekAppointments" class="mb-0">0</h2>
+                </div>
+                <div class="icon-box bg-warning bg-opacity-10 text-warning"><i class="fa-solid fa-calendar-week fa-lg"></i></div>
+              </div>
+              <p class="text-muted small mb-0">Số bệnh nhân cần tái khám trong tuần này.</p>
+            </div>
+          </div>
+          <div class="col">
+            <div id="overdueAppointmentsCard" class="metric-card p-3" style="cursor: pointer;" data-cat="overdue">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <div>
+                  <p class="text-uppercase text-muted small mb-1">Tái khám quá hạn</p>
+                  <h2 id="overdueAppointments" class="mb-0">0</h2>
+                </div>
+                <div class="icon-box bg-danger bg-opacity-10 text-danger"><i class="fa-solid fa-calendar-xmark fa-lg"></i></div>
+              </div>
+              <p class="text-muted small mb-0">Số bệnh nhân có lịch tái khám đã quá hạn.</p>
+            </div>
+          </div>
+          <div class="col">
+            <div id="monthAppointmentsCard" class="metric-card p-3" style="cursor: pointer;" data-cat="month">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <div>
+                  <p class="text-uppercase text-muted small mb-1">Tái khám tháng này</p>
+                  <h2 id="monthAppointments" class="mb-0">0</h2>
+                </div>
+                <div class="icon-box bg-success bg-opacity-10 text-success"><i class="fa-solid fa-calendar-days fa-lg"></i></div>
+              </div>
+              <p class="text-muted small mb-0">Tổng số bệnh nhân cần tái khám trong tháng.</p>
+            </div>
+          </div>
+          <div class="col">
+            <div id="doneCard" class="metric-card p-3" style="cursor: pointer;" data-cat="done">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <div>
+                  <p class="text-uppercase text-muted small mb-1">Đã khám</p>
+                  <h2 id="doneCount" class="mb-0">0</h2>
+                </div>
+                <div class="icon-box bg-success bg-opacity-10 text-success"><i class="fa-solid fa-check fa-lg"></i></div>
+              </div>
+              <p class="text-muted small mb-0">Số bệnh nhân đã khám.</p>
+            </div>
+          </div>
+        </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-12 col-xl-7">
+          <div class="summary-card" style="border-radius: 16px; background: #ffffff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); min-height: 420px; display: flex; flex-direction: column; padding: 24px;">
+            <div class="mb-5" style="flex-shrink: 0;">
+              <h5 class="mb-0" style="font-size: 22px; font-weight: 700; color: #1f2937;">Lịch tái khám tháng này</h5>
+              <p class="text-muted small mt-1 mb-0" style="font-size: 13px;">Thống kê số bệnh nhân tái khám mỗi tuần trong tháng hiện tại</p>
+            </div>
+            <div style="flex: 1; min-height: 320px; position: relative;">
+              <canvas id="appointmentChart" style="display: block;"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-xl-5">
+          <div class="summary-card p-4 h-100">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <div>
+                <h5 class="mb-1">Lịch tái khám tháng này</h5>
+                <p class="text-muted small mb-0">Các lịch tái khám có trong tháng hiện tại.</p>
+              </div>
+              <span id="monthCount" class="badge bg-primary text-white py-2 px-3">0</span>
+            </div>
+            <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
+              <table class="table table-sm table-borderless mb-0">
+                <thead class="table-secondary">
+                  <tr>
+                    <th>Ngày</th>
+                    <th>Mã BN</th>
+                    <th>Họ tên</th>
+                    <th>Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody id="currentMonthAppointmentsBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row g-3 mb-4">
+        <div class="col-12">
+          <div class="summary-card p-4">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <div>
+                <h5 class="mb-1">DANH SÁCH KHÁM HÔM NAY</h5>
+                <p class="text-muted small mb-0">Danh sách các bệnh nhân có lịch khám hôm nay.</p>
+              </div>
+              <span class="badge bg-primary py-2 px-3" id="todayCountBadge">0</span>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Mã BN</th>
+                    <th>Họ tên</th>
+                    <th>SĐT</th>
+                    <th>Lịch hẹn</th>
+                    <th>Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody id="todayAppointmentsBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      </section>
+
+      <!-- Tiếp nhận -->
+      <section id="receptionSection" class="mb-5" style="display: none;">
+        <div class="mb-3">
+          <h2 class="h4 mb-1">Tiếp nhận</h2>
+        </div>
+        <div class="row g-3 mb-4">
+          <div class="col-12 col-xl-7">
+            <div class="summary-card shadow-sm p-4">
+              <ul class="nav nav-tabs mb-3" role="tablist">
+                <li class="nav-item" role="presentation"><button class="nav-link active" id="receptionModeNewBtn" type="button">Tiếp nhận mới</button></li>
+                <li class="nav-item" role="presentation"><button class="nav-link" id="receptionModeRevisitBtn" type="button">Tiếp nhận tái khám</button></li>
+              </ul>
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                  <h5 class="mb-1">Form tiếp nhận</h5>
+                </div>
+              </div>
+              <div id="receptionModeNew">
+                <form id="receptionForm">
+                <div class="row g-3">
+                  <div class="col-md-4"><label class="form-label">Mã BN</label><input id="r_patientId" class="form-control" required /></div>
+                  <div class="col-md-4"><label class="form-label">Họ tên</label><input id="r_fullName" class="form-control" required /></div>
+                  <div class="col-md-4"><label class="form-label">Ngày sinh</label><input id="r_birthDate" type="date" class="form-control" /></div>
+                  <div class="col-md-3"><label class="form-label">Giới tính</label><select id="r_gender" class="form-select"><option value="Nam">Nam</option><option value="Nữ">Nữ</option><option value="Khác">Khác</option></select></div>
+                  <div class="col-md-3"><label class="form-label">Mã BHYT</label><input id="r_healthInsurance" class="form-control" /></div>
+                  <div class="col-md-3"><label class="form-label">CCCD</label><input id="r_cccd" class="form-control" /></div>
+                  <div class="col-md-3"><label class="form-label">Số điện thoại</label><input id="r_phone" type="tel" class="form-control" /></div>
+                  <div class="col-md-6"><label class="form-label">Địa chỉ</label><input id="r_address" class="form-control" /></div>
+                  <div class="col-md-3"><label class="form-label">Ngày khám gần nhất</label><input id="r_lastExamDate" type="date" class="form-control" /></div>
+                  <div class="col-md-3"><label class="form-label">Lịch hẹn tiếp theo</label><input id="r_nextAppointment" type="date" class="form-control" /></div>
+                  <div class="col-12"><label class="form-label">Ghi chú tiếp nhận</label><textarea id="r_note" class="form-control" rows="3"></textarea></div>
+                </div>
+                <div class="d-flex flex-wrap gap-2 mt-4">
+                  <button type="submit" class="btn btn-primary">Lưu tiếp nhận</button>
+                  <button id="receptionResetBtn" type="button" class="btn btn-outline-secondary">Làm mới</button>
+                </div>
+                </form>
+              </div>
+
+              <div id="receptionModeRevisit" style="display:none;">
+                <div class="row g-3">
+                  <div class="col-md-6"><label class="form-label">Mã BN (tái khám)</label><input id="r_revisitPatientId" class="form-control" placeholder="Nhập mã bệnh nhân" /></div>
+                  <div class="col-md-6 d-flex align-items-end">
+                    <div>
+                      <button id="r_loadRevisitBtn" type="button" class="btn btn-outline-primary me-2">Tìm bệnh nhân</button>
+                      <button id="r_confirmRevisitBtn" type="button" class="btn btn-primary">Xác nhận tái khám</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="small text-muted mt-2">Khi xác nhận tái khám, hệ thống sẽ dùng Mã BN cũ và chuyển trạng thái lịch hẹn 'Hôm nay' / 'Sắp tới' (trong 7 ngày) thành 'Đã khám', sau đó cho phép chọn xét nghiệm.</div>
+              </div>
+            </div>
+            <div id="receptionTestSelection" class="summary-card shadow-sm p-4" style="display:none; margin-top: 1.5rem;">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                  <h5 class="mb-1">Chọn xét nghiệm</h5>
+                  <p class="text-muted small mb-0">Chọn các nhóm và thông số xét nghiệm cho bệnh nhân vừa tiếp nhận.</p>
+                  <div class="small">Bệnh nhân: <strong id="receptionSelectedPatientLabel">-</strong></div>
+                </div>
+                <span class="badge bg-success bg-opacity-15 text-success py-2 px-3">Bước tiếp theo</span>
+              </div>
+              <div class="row g-3">
+                <div class="col-12 col-md-6">
+                  <div class="border rounded-3 p-3">
+                    <div class="form-check mb-2">
+                      <input id="receptionTestBiochemistryAll" class="form-check-input" type="checkbox" />
+                      <label class="form-check-label">Hóa sinh</label>
+                    </div>
+                    <div class="ps-3">
+                      <div class="form-check"><input id="receptionTestBiochemistry_glucose" class="form-check-input" type="checkbox" /><label class="form-check-label">Glucose</label></div>
+                      <div class="form-check"><input id="receptionTestBiochemistry_hba1c" class="form-check-input" type="checkbox" /><label class="form-check-label">HbA1c</label></div>
+                      <div class="form-check"><input id="receptionTestBiochemistry_ure" class="form-check-input" type="checkbox" /><label class="form-check-label">Ure</label></div>
+                      <div class="form-check"><input id="receptionTestBiochemistry_creatinine" class="form-check-input" type="checkbox" /><label class="form-check-label">Creatinine</label></div>
+                      <div class="form-check"><input id="receptionTestBiochemistry_cholesterol" class="form-check-input" type="checkbox" /><label class="form-check-label">Cholesterol</label></div>
+                      <div class="form-check"><input id="receptionTestBiochemistry_triglyceride" class="form-check-input" type="checkbox" /><label class="form-check-label">Triglyceride</label></div>
+                      <div class="form-check"><input id="receptionTestBiochemistry_ast" class="form-check-input" type="checkbox" /><label class="form-check-label">AST</label></div>
+                      <div class="form-check"><input id="receptionTestBiochemistry_alt" class="form-check-input" type="checkbox" /><label class="form-check-label">ALT</label></div>
+                      <div class="form-check"><input id="receptionTestBiochemistry_ggt" class="form-check-input" type="checkbox" /><label class="form-check-label">GGT</label></div>
+                      <div class="form-check"><input id="receptionTestBiochemistry_bilirubin" class="form-check-input" type="checkbox" /><label class="form-check-label">Bilirubin</label></div>
+                      <div class="form-check"><input id="receptionTestBiochemistry_uricAcid" class="form-check-input" type="checkbox" /><label class="form-check-label">Acid Uric</label></div>
+                      <div class="form-check"><input id="receptionTestBiochemistry_totalProtein" class="form-check-input" type="checkbox" /><label class="form-check-label">Total Protein</label></div>
+                      <div class="form-check"><input id="receptionTestBiochemistry_albumin" class="form-check-input" type="checkbox" /><label class="form-check-label">Albumin</label></div>
+                      <div class="form-check"><input id="receptionTestBiochemistry_globulin" class="form-check-input" type="checkbox" /><label class="form-check-label">Globulin</label></div>
+                      <div class="form-check"><input id="receptionTestBiochemistry_agRatio" class="form-check-input" type="checkbox" /><label class="form-check-label">A/G Ratio</label></div>
+                      <div class="form-check"><input id="receptionTestBiochemistry_ldh" class="form-check-input" type="checkbox" /><label class="form-check-label">LDH</label></div>
+                      <div class="form-check"><input id="receptionTestBiochemistry_calcium" class="form-check-input" type="checkbox" /><label class="form-check-label">Calcium</label></div>
+                      <div class="form-check"><input id="receptionTestBiochemistry_phosphate" class="form-check-input" type="checkbox" /><label class="form-check-label">Phosphate</label></div>
+                      <div class="form-check"><input id="receptionTestBiochemistry_magnesium" class="form-check-input" type="checkbox" /><label class="form-check-label">Magnesium</label></div>
+                      <div class="form-check"><input id="receptionTestBiochemistry_ldl" class="form-check-input" type="checkbox" /><label class="form-check-label">LDL</label></div>
+                      <div class="form-check"><input id="receptionTestBiochemistry_hdl" class="form-check-input" type="checkbox" /><label class="form-check-label">HDL</label></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-12 col-md-6">
+                  <div class="border rounded-3 p-3">
+                    <div class="form-check mb-2">
+                      <input id="receptionTestImmunologyAll" class="form-check-input" type="checkbox" />
+                      <label class="form-check-label">Miễn dịch</label>
+                    </div>
+                    <div class="ps-3">
+                      <div class="form-check"><input id="receptionTestImmunology_hbsag" class="form-check-input" type="checkbox" /><label class="form-check-label">HBsAg</label></div>
+                      <div class="form-check"><input id="receptionTestImmunology_antiHbs" class="form-check-input" type="checkbox" /><label class="form-check-label">Anti-HBs</label></div>
+                      <div class="form-check"><input id="receptionTestImmunology_hcv" class="form-check-input" type="checkbox" /><label class="form-check-label">HCV</label></div>
+                      <div class="form-check"><input id="receptionTestImmunology_hiv" class="form-check-input" type="checkbox" /><label class="form-check-label">HIV</label></div>
+                      <div class="form-check"><input id="receptionTestImmunology_tsh" class="form-check-input" type="checkbox" /><label class="form-check-label">TSH</label></div>
+                      <div class="form-check"><input id="receptionTestImmunology_t3" class="form-check-input" type="checkbox" /><label class="form-check-label">T3</label></div>
+                      <div class="form-check"><input id="receptionTestImmunology_t4" class="form-check-input" type="checkbox" /><label class="form-check-label">T4</label></div>
+                      <div class="form-check"><input id="receptionTestImmunology_afp" class="form-check-input" type="checkbox" /><label class="form-check-label">AFP</label></div>
+                      <div class="form-check"><input id="receptionTestImmunology_cea" class="form-check-input" type="checkbox" /><label class="form-check-label">CEA</label></div>
+                      <div class="form-check"><input id="receptionTestImmunology_psa" class="form-check-input" type="checkbox" /><label class="form-check-label">PSA</label></div>
+                      <div class="form-check"><input id="receptionTestImmunology_ca125" class="form-check-input" type="checkbox" /><label class="form-check-label">CA125</label></div>
+                      <div class="form-check"><input id="receptionTestImmunology_ca199" class="form-check-input" type="checkbox" /><label class="form-check-label">CA19-9</label></div>
+                      <div class="form-check"><input id="receptionTestImmunology_ca153" class="form-check-input" type="checkbox" /><label class="form-check-label">CA15-3</label></div>
+                      <div class="form-check"><input id="receptionTestImmunology_crp" class="form-check-input" type="checkbox" /><label class="form-check-label">CRP</label></div>
+                      <div class="form-check"><input id="receptionTestImmunology_rf" class="form-check-input" type="checkbox" /><label class="form-check-label">RF</label></div>
+                      <div class="form-check"><input id="receptionTestImmunology_ana" class="form-check-input" type="checkbox" /><label class="form-check-label">ANA</label></div>
+                      <div class="form-check"><input id="receptionTestImmunology_igg" class="form-check-input" type="checkbox" /><label class="form-check-label">IgG</label></div>
+                      <div class="form-check"><input id="receptionTestImmunology_igm" class="form-check-input" type="checkbox" /><label class="form-check-label">IgM</label></div>
+                      <div class="form-check"><input id="receptionTestImmunology_iga" class="form-check-input" type="checkbox" /><label class="form-check-label">IgA</label></div>
+                      <div class="form-check"><input id="receptionTestImmunology_ft3" class="form-check-input" type="checkbox" /><label class="form-check-label">FT3</label></div>
+                      <div class="form-check"><input id="receptionTestImmunology_ft4" class="form-check-input" type="checkbox" /><label class="form-check-label">FT4</label></div>
+                      <div class="form-check"><input id="receptionTestImmunology_cortisol" class="form-check-input" type="checkbox" /><label class="form-check-label">Cortisol</label></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-12 col-md-6">
+                  <div class="border rounded-3 p-3">
+                    <div class="form-check mb-2">
+                      <input id="receptionTestHematologyAll" class="form-check-input" type="checkbox" />
+                      <label class="form-check-label">Công thức máu</label>
+                    </div>
+                    <div class="ps-3 row gx-2 gy-2">
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestHematology_wbc" class="form-check-input" type="checkbox" /><label class="form-check-label">WBC</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestHematology_neu" class="form-check-input" type="checkbox" /><label class="form-check-label">Neu#</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestHematology_lym" class="form-check-input" type="checkbox" /><label class="form-check-label">Lym#</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestHematology_mono" class="form-check-input" type="checkbox" /><label class="form-check-label">Mon#</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestHematology_eos" class="form-check-input" type="checkbox" /><label class="form-check-label">Eos#</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestHematology_baso" class="form-check-input" type="checkbox" /><label class="form-check-label">Baso#</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestHematology_neuPercent" class="form-check-input" type="checkbox" /><label class="form-check-label">Neu%</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestHematology_lymPercent" class="form-check-input" type="checkbox" /><label class="form-check-label">Lym%</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestHematology_monoPercent" class="form-check-input" type="checkbox" /><label class="form-check-label">Mon%</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestHematology_eosPercent" class="form-check-input" type="checkbox" /><label class="form-check-label">Eos%</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestHematology_basoPercent" class="form-check-input" type="checkbox" /><label class="form-check-label">Baso%</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestHematology_rbc" class="form-check-input" type="checkbox" /><label class="form-check-label">RBC</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestHematology_hgb" class="form-check-input" type="checkbox" /><label class="form-check-label">HGB</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestHematology_hct" class="form-check-input" type="checkbox" /><label class="form-check-label">HCT</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestHematology_mcv" class="form-check-input" type="checkbox" /><label class="form-check-label">MCV</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestHematology_mch" class="form-check-input" type="checkbox" /><label class="form-check-label">MCH</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestHematology_mchc" class="form-check-input" type="checkbox" /><label class="form-check-label">MCHC</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestHematology_rdw" class="form-check-input" type="checkbox" /><label class="form-check-label">RDW-CV</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestHematology_rdwSd" class="form-check-input" type="checkbox" /><label class="form-check-label">RDW-SD</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestHematology_plt" class="form-check-input" type="checkbox" /><label class="form-check-label">PLT</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestHematology_mpv" class="form-check-input" type="checkbox" /><label class="form-check-label">MPV</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestHematology_pdw" class="form-check-input" type="checkbox" /><label class="form-check-label">PDW</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestHematology_pct" class="form-check-input" type="checkbox" /><label class="form-check-label">PCT</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestHematology_plcr" class="form-check-input" type="checkbox" /><label class="form-check-label">PLCR</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestHematology_plcc" class="form-check-input" type="checkbox" /><label class="form-check-label">PLCC</label></div></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-12 col-md-6">
+                  <div class="border rounded-3 p-3">
+                    <div class="form-check mb-2">
+                      <input id="receptionTestCoagulationAll" class="form-check-input" type="checkbox" />
+                      <label class="form-check-label">Đông máu </label>
+                    </div>
+                    <div class="ps-3 row gx-2 gy-2">
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestCoagulation_pt_s" class="form-check-input" type="checkbox" /><label class="form-check-label">PT (s)</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestCoagulation_pt_percent" class="form-check-input" type="checkbox" /><label class="form-check-label">PT (%)</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestCoagulation_inr" class="form-check-input" type="checkbox" /><label class="form-check-label">INR</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestCoagulation_aptt" class="form-check-input" type="checkbox" /><label class="form-check-label">APTT</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestCoagulation_fibrinogen" class="form-check-input" type="checkbox" /><label class="form-check-label">Fibrinogen</label></div></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-12 col-md-6">
+                  <div class="border rounded-3 p-3">
+                    <div class="form-check mb-2">
+                      <input id="receptionTestUrineAll" class="form-check-input" type="checkbox" />
+                      <label class="form-check-label">Nước tiểu</label>
+                    </div>
+                    <div class="ps-3 row gx-2 gy-2">
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestUrine_leu" class="form-check-input" type="checkbox" /><label class="form-check-label">LEU</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestUrine_nit" class="form-check-input" type="checkbox" /><label class="form-check-label">NIT</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestUrine_ubg" class="form-check-input" type="checkbox" /><label class="form-check-label">UBG</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestUrine_bil" class="form-check-input" type="checkbox" /><label class="form-check-label">BIL</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestUrine_pro" class="form-check-input" type="checkbox" /><label class="form-check-label">PRO</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestUrine_ph" class="form-check-input" type="checkbox" /><label class="form-check-label">pH</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestUrine_bld" class="form-check-input" type="checkbox" /><label class="form-check-label">BLD</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestUrine_ket" class="form-check-input" type="checkbox" /><label class="form-check-label">KET</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestUrine_glu" class="form-check-input" type="checkbox" /><label class="form-check-label">GLU</label></div></div>
+                      <div class="col-12 col-sm-6"><div class="form-check"><input id="receptionTestUrine_sg" class="form-check-input" type="checkbox" /><label class="form-check-label">SG</label></div></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-4 d-flex flex-wrap gap-2">
+                <button id="saveReceptionTestSelection" type="button" class="btn btn-success">Lưu xét nghiệm</button>
+                <button id="cancelReceptionTestSelection" type="button" class="btn btn-outline-secondary">Bỏ qua</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-xl-5">
+            <div class="summary-card shadow-sm p-4">
+              <h5 class="mb-1">Thống kê tiếp nhận</h5>
+              <p class="text-muted small mb-3">Cập nhật nhanh số bệnh nhân và trạng thái lịch tái khám.</p>
+              <div class="list-group list-group-flush">
+                <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 border-0">
+                  <span>Tổng bệnh nhân</span><strong id="receptionTotalBadge">0</strong>
+                </div>
+                <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 border-0">
+                  <span>Đang có lịch tái khám</span><strong id="receptionScheduledBadge">0</strong>
+                </div>
+                <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 border-0">
+                  <span>Không có lịch</span><strong id="receptionNoScheduleBadge">0</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="patientSection" class="mb-5">
+        <div class="mb-3">
+          <h2 class="h4 mb-1">Bệnh nhân</h2>
+          <p class="text-muted mb-0">Quản lý hồ sơ, tìm kiếm và lịch khám bệnh nhân.</p>
+        </div>
+        <div class="search-bar-card mb-4 shadow-sm">
+          <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-4">
+            <div>
+              <h5 class="mb-1">Bộ lọc bệnh nhân</h5>
+            </div>
+            <span id="selectedCountBadge" class="badge bg-primary text-white">0 đã chọn</span>
+            <span class="badge bg-primary bg-opacity-10 text-primary py-2 px-3">Hiện có <strong id="totalPatientsBadge">0</strong> bệnh nhân</span>
+          </div>
+          <div class="row gx-3 gy-3 align-items-center">
+            <div class="col-12 col-md-3">
+              <div class="input-group shadow-sm">
+                <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-search"></i></span>
+                <input id="searchName" type="search" class="form-control border-start-0" placeholder="Tìm theo tên" />
+              </div>
+            </div>
+            <div class="col-12 col-md-3">
+              <div class="input-group shadow-sm">
+                <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-phone"></i></span>
+                <input id="searchPhone" type="search" class="form-control border-start-0" placeholder="Tìm theo số điện thoại" />
+              </div>
+            </div>
+            <div class="col-12 col-md-3">
+              <div class="input-group shadow-sm">
+                <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-id-card"></i></span>
+                <input id="searchCccd" type="search" class="form-control border-start-0" placeholder="Tìm theo CCCD" />
+              </div>
+            </div>
+            <div class="col-12 col-md-3">
+              <div class="input-group shadow-sm">
+                <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-barcode"></i></span>
+                <input id="searchCode" type="search" class="form-control border-start-0" placeholder="Tìm theo mã BN" />
+              </div>
+            </div>
+            <div class="col-12 text-end">
+              <div class="d-inline-flex align-items-center gap-2">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="summary-card shadow-sm p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="width:36px"><input id="selectAllCheckbox" type="checkbox" /></th>
+                  <th class="pointer" data-sort="patientId">Mã BN <i class="fa-solid fa-sort"></i></th>
+                  <th class="pointer" data-sort="fullName">Họ tên <i class="fa-solid fa-sort"></i></th>
+                  <th class="pointer" data-sort="birthDate">Ngày sinh <i class="fa-solid fa-sort"></i></th>
+                  <th>Giới tính</th>
+                  <th class="pointer" data-sort="phone">SĐT <i class="fa-solid fa-sort"></i></th>
+                  <th class="pointer" data-sort="cccd">CCCD <i class="fa-solid fa-sort"></i></th>
+                  <th class="pointer" data-sort="lastExamDate">Khám gần nhất <i class="fa-solid fa-sort"></i></th>
+                  <th class="pointer" data-sort="nextAppointment">Tái khám <i class="fa-solid fa-sort"></i></th>
+                  <th>Trạng thái</th>
+                  <th>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="patientTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="resultsSection" class="mb-5" style="display: none;">
+        <div class="mb-3">
+          <h2 class="h4 mb-1">Kết quả</h2>
+          <p class="text-muted mb-0">Xem và quản lý kết quả xét nghiệm bệnh nhân.</p>
+        </div>
+        <div class="row g-3" style="height: calc(100vh - 300px);">
+          <!-- Cột trái: Danh sách bệnh nhân -->
+          <div class="col-md-3">
+            <div class="search-bar-card shadow-sm p-3" style="height: 100%; display: flex; flex-direction: column;">
+              <div class="mb-2">
+                <small class="text-muted d-block mb-1">Tổng: <strong id="resultsTotalBadge">0</strong></small>
+                <small class="text-muted d-block"><span>Đã trả: <strong id="resultsReturnedBadge">0</strong></span> &nbsp;•&nbsp; <span>Chưa trả: <strong id="resultsNotReturnedBadge">0</strong></span></small>
+              </div>
+              <div class="d-flex gap-2 mb-3">
+                <div class="input-group input-group-sm shadow-sm flex-fill">
+                  <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-search"></i></span>
+                  <input id="resultsSearchName" type="search" class="form-control border-start-0 form-control-sm" placeholder="Tìm tên..." />
+                </div>
+                <div class="input-group input-group-sm shadow-sm" style="width:140px;">
+                  <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-barcode"></i></span>
+                  <input id="resultsSearchCode" type="search" class="form-control border-start-0 form-control-sm" placeholder="Mã BN" />
+                </div>
+              </div>
+              <div class="d-flex gap-2 align-items-center mb-3">
+                <div class="input-group input-group-sm shadow-sm" style="width:170px;">
+                  <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-calendar-days"></i></span>
+                  <input id="resultsSearchDate" type="date" class="form-control form-control-sm" />
+                </div>
+                <div class="input-group input-group-sm shadow-sm" style="width:170px;">
+                  <label class="input-group-text bg-white border-end-0">Trạng thái</label>
+                  <select id="resultsSearchStatus" class="form-select form-select-sm">
+                    <option value="all">Tất cả</option>
+                    <option value="returned">Đã trả kết quả</option>
+                    <option value="notReturned">Chưa trả kết quả</option>
+                  </select>
+                </div>
+              </div>
+              <div class="mb-3">
+                <div class="d-flex flex-wrap gap-2 small text-muted">
+                  <div class="d-flex align-items-center gap-1"><span class="rounded-circle" style="width:10px;height:10px;background:#0d6efd;"></span> Chưa nhập</div>
+                  <div class="d-flex align-items-center gap-1"><span class="rounded-circle" style="width:10px;height:10px;background:#dc3545;"></span> Nhập chưa đủ</div>
+                  <div class="d-flex align-items-center gap-1"><span class="rounded-circle" style="width:10px;height:10px;background:#ffc107;"></span> Đã nhập đủ, chưa duyệt</div>
+                  <div class="d-flex align-items-center gap-1"><span class="rounded-circle" style="width:10px;height:10px;background:#198754;"></span> Đã nhập đủ và đã duyệt</div>
+                </div>
+              </div>
+              <div class="list-group flex-grow-1 overflow-auto">
+                <div id="resultsPatientListContainer" class="list-group" style="overflow-y: auto;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cột phải: Chi tiết kết quả xét nghiệm -->
+          <div class="col-md-9">
+            <div class="summary-card shadow-sm p-4" style="height: 100%; display: flex; flex-direction: column; overflow-y: auto;">
+              <div id="resultsDetailPlaceholder" class="text-center text-muted py-5">
+                <p><i class="fa-solid fa-file-medical fa-2x mb-3"></i></p>
+                <p>Chọn một bệnh nhân để xem kết quả xét nghiệm</p>
+              </div>
+              <div id="resultsDetailContainer" style="display: none;">
+                <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                  <div>
+                    <h5 id="resultsPatientLabel" class="mb-1">-</h5>
+                    <p class="text-muted small mb-0" id="resultsPatientInfo">-</p>
+                    <span id="resultsDetailStatusLabel" class="badge bg-secondary mt-1">Trạng thái: Chưa chọn</span>
+                  </div>
+                  <div class="d-flex align-items-center gap-2">
+                    <button id="approveResultsInlineButton" type="button" class="btn btn-sm btn-warning" disabled>Duyệt</button>
+                    <button id="editResultsTestsBtn" type="button" class="btn btn-sm btn-outline-primary">Chỉnh sửa xét nghiệm</button>
+                  </div>
+                </div>
+                <ul class="nav nav-tabs mb-3" role="tablist" id="resultsDetailTabs">
+                  <!-- Tabs sẽ được tạo động -->
+                </ul>
+                <div class="tab-content" id="resultsDetailTabContent">
+                  <!-- Tab panes sẽ được tạo động -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="modal fade" id="resultsDetailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title"><i class="fa-solid fa-file-medical me-2"></i>Chi tiết kết quả xét nghiệm</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                <div>
+                  <h5 id="resultsModalPatientLabel" class="mb-1">-</h5>
+                  <p class="text-muted small mb-0" id="resultsModalPatientInfo">-</p>
+                  <span id="resultsStatusLabel" class="badge bg-secondary mt-1">Trạng thái: Chưa chọn</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <button id="approveResultsDetailButton" type="button" class="btn btn-sm btn-warning" disabled>Duyệt</button>
+                  <button id="addResultRowButton" type="button" class="btn btn-sm btn-primary"><i class="fa-solid fa-plus"></i> Thêm xét nghiệm</button>
+                </div>
+              </div>
+              <ul class="nav nav-tabs mb-3" role="tablist">
+                <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#resultsTabHematology" type="button">Công thức máu</button></li>
+                <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#resultsTabBiochemistry" type="button">Sinh hóa</button></li>
+                <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#resultsTabImmunology" type="button">Miễn dịch</button></li>
+                <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#resultsTabCoagulation" type="button">Đông máu</button></li>
+                <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#resultsTabUrine" type="button">Nước tiểu</button></li>
+                <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#resultsTabConclusion" type="button">Chẩn đoán</button></li>
+                <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#resultsTabNotes" type="button">Ghi chú</button></li>
+              </ul>
+              <div class="tab-content">
+                <div class="tab-pane fade show active" id="resultsTabHematology">
+                  <div class="table-responsive mb-3">
+                    <table class="table table-bordered align-middle mb-0">
+                      <thead class="table-secondary"><tr><th>Tên xét nghiệm</th><th>Kết quả</th><th>Chỉ số bình thường</th><th>Đơn vị</th><th>Hành động</th></tr></thead>
+                      <tbody id="resultsHematologyBody"></tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="tab-pane fade" id="resultsTabBiochemistry">
+                  <div class="table-responsive mb-3">
+                    <table class="table table-bordered align-middle mb-0">
+                      <thead class="table-secondary"><tr><th>Tên xét nghiệm</th><th>Kết quả</th><th>Chỉ số bình thường</th><th>Đơn vị</th><th>Hành động</th></tr></thead>
+                      <tbody id="resultsBiochemistryBody"></tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="tab-pane fade" id="resultsTabImmunology">
+                  <div class="table-responsive mb-3">
+                    <table class="table table-bordered align-middle mb-0">
+                      <thead class="table-secondary"><tr><th>Tên xét nghiệm</th><th>Kết quả</th><th>Chỉ số bình thường</th><th>Đơn vị</th><th>Hành động</th></tr></thead>
+                      <tbody id="resultsImmunologyBody"></tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="tab-pane fade" id="resultsTabCoagulation">
+                  <div class="table-responsive mb-3">
+                    <table class="table table-bordered align-middle mb-0">
+                      <thead class="table-secondary"><tr><th>Tên xét nghiệm</th><th>Kết quả</th><th>Chỉ số bình thường</th><th>Đơn vị</th><th>Hành động</th></tr></thead>
+                      <tbody id="resultsCoagulationBody"></tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="tab-pane fade" id="resultsTabUrine">
+                  <div class="table-responsive mb-3">
+                    <table class="table table-bordered align-middle mb-0">
+                      <thead class="table-secondary"><tr><th>Tên xét nghiệm</th><th>Kết quả</th><th>Chỉ số bình thường</th><th>Đơn vị</th><th>Hành động</th></tr></thead>
+                      <tbody id="resultsUrineBody"></tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="tab-pane fade" id="resultsTabConclusion">
+                  <div class="row g-3">
+                    <div class="col-md-6"><label class="form-label">Chẩn đoán</label><textarea id="resultsConclusionDiagnosis" class="form-control" rows="3"></textarea></div>
+                    <div class="col-md-6"><label class="form-label">Hướng điều trị</label><textarea id="resultsConclusionTreatment" class="form-control" rows="3"></textarea></div>
+                  </div>
+                </div>
+                <div class="tab-pane fade" id="resultsTabNotes">
+                  <div class="mb-3"><label class="form-label">Ghi chú bác sĩ</label><textarea id="resultsConclusionNote" class="form-control" rows="5"></textarea></div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer d-flex align-items-center justify-content-between">
+              <span id="resultsModalStatusLabel" class="badge bg-secondary me-auto">Trạng thái: Chưa chọn</span>
+              <div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-warning" id="approveResultsButton">Duyệt</button>
+                <button type="button" class="btn btn-success" id="saveResultsModalButton">Lưu kết quả</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <section id="detailSection" class="mb-5" style="display: none;">
+        <div class="mb-4">
+          <button id="backToPatientBtn" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2 mb-3"><i class="fa-solid fa-arrow-left"></i> Quay lại</button>
+          <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-3">
+            <div>
+              <h2 class="h4 mb-1">Hồ sơ bệnh nhân</h2>
+              <p class="text-muted mb-0" id="detailPatientLabel">-</p>
+            </div>
+            <button id="savePatientDetailButton" class="btn btn-success btn-sm">Lưu cập nhật</button>
+          </div>
+        </div>
+        <div class="summary-card">
+          <ul class="nav nav-tabs mb-3" role="tablist">
+            <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabInfo" type="button">Thông tin cá nhân</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabHematology" type="button">Huyết học</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabBiochemistry" type="button">Hóa sinh</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabImmunology" type="button">Miễn dịch</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabCoagulation" type="button">Đông máu</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabUrine" type="button">Nước tiểu</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabConclusionReminder" type="button">Kết luận</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabHistory" type="button">Lịch sử khám</button></li>
+          </ul>
+          <div class="tab-content p-3">
+            <div class="tab-pane fade show active" id="tabInfo">
+              <div class="row g-3">
+                <div class="col-md-4"><label class="form-label">Mã BN</label><input id="detailPatientId" class="form-control" disabled /></div>
+                <div class="col-md-4"><label class="form-label">Họ tên</label><input id="detailFullName" class="form-control" disabled /></div>
+                <div class="col-md-4"><label class="form-label">Ngày sinh</label><input id="detailBirthDate" class="form-control" disabled /></div>
+                <div class="col-md-3"><label class="form-label">Tuổi</label><input id="detailAge" class="form-control" disabled /></div>
+                <div class="col-md-3"><label class="form-label">Giới tính</label><input id="detailGender" class="form-control" disabled /></div>
+                <div class="col-md-3"><label class="form-label">Mã BHYT</label><input id="detailHealthInsurance" class="form-control" disabled /></div>
+                <div class="col-md-3"><label class="form-label">CCCD</label><input id="detailCccd" class="form-control" disabled /></div>
+                <div class="col-md-4"><label class="form-label">Số điện thoại</label><input id="detailPhone" class="form-control" disabled /></div>
+                <div class="col-md-4"><label class="form-label">Dân tộc</label><input id="detailEthnicity" class="form-control" disabled /></div>
+                <div class="col-md-4"><label class="form-label">Nghề nghiệp</label><input id="detailJob" class="form-control" disabled /></div>
+                <div class="col-12"><label class="form-label">Địa chỉ</label><input id="detailAddress" class="form-control" disabled /></div>
+                <div class="col-12"><label class="form-label">Ghi chú</label><textarea id="detailNote" class="form-control" rows="2" disabled></textarea></div>
+                <div class="col-md-6"><label class="form-label">Ngày khám gần nhất</label><input id="detailLastExamDate" class="form-control" disabled /></div>
+                <div class="col-md-6"><label class="form-label">Lịch hẹn tiếp theo</label><input id="detailNextAppointment" class="form-control" disabled /></div>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="tabHematology">
+              <div class="table-responsive">
+                <table class="table table-borderless align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th>Thông số</th>
+                      <th>Kết quả mới</th>
+                      <th>Khoảng bình thường</th>
+                      <th>Đơn vị</th>
+                      <th>Tiền sử</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr><th>WBC</th><td><input id="hematologyWbc" class="form-control form-control-sm" /></td><td class="text-nowrap">4.0-10.0</td><td class="text-nowrap">×10^9/L</td><td><input id="hematologyWbcPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>Neu#</th><td><input id="hematologyNeu" class="form-control form-control-sm" /></td><td class="text-nowrap">2.0-7.5</td><td class="text-nowrap">×10^9/L</td><td><input id="hematologyNeuPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>Lym#</th><td><input id="hematologyLym" class="form-control form-control-sm" /></td><td class="text-nowrap">1.0-4.0</td><td class="text-nowrap">×10^9/L</td><td><input id="hematologyLymPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>Mon#</th><td><input id="hematologyMono" class="form-control form-control-sm" /></td><td class="text-nowrap">0.2-0.8</td><td class="text-nowrap">×10^9/L</td><td><input id="hematologyMonoPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>Eos#</th><td><input id="hematologyEos" class="form-control form-control-sm" /></td><td class="text-nowrap">0.0-0.5</td><td class="text-nowrap">×10^9/L</td><td><input id="hematologyEosPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>Baso#</th><td><input id="hematologyBaso" class="form-control form-control-sm" /></td><td class="text-nowrap">0.0-0.2</td><td class="text-nowrap">×10^9/L</td><td><input id="hematologyBasoPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>Neu%</th><td><input id="hematologyNeuPercent" class="form-control form-control-sm" /></td><td class="text-nowrap">40-75</td><td class="text-nowrap">%</td><td><input id="hematologyNeuPercentPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>Lym%</th><td><input id="hematologyLymPercent" class="form-control form-control-sm" /></td><td class="text-nowrap">20-45</td><td class="text-nowrap">%</td><td><input id="hematologyLymPercentPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>Mon%</th><td><input id="hematologyMonoPercent" class="form-control form-control-sm" /></td><td class="text-nowrap">2-8</td><td class="text-nowrap">%</td><td><input id="hematologyMonoPercentPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>Eos%</th><td><input id="hematologyEosPercent" class="form-control form-control-sm" /></td><td class="text-nowrap">0.0-5</td><td class="text-nowrap">%</td><td><input id="hematologyEosPercentPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>Baso%</th><td><input id="hematologyBasoPercent" class="form-control form-control-sm" /></td><td class="text-nowrap">0.0-2</td><td class="text-nowrap">%</td><td><input id="hematologyBasoPercentPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>RBC</th><td><input id="hematologyRbc" class="form-control form-control-sm" /></td><td class="text-nowrap">4.0-5.5</td><td class="text-nowrap">×10^12/L</td><td><input id="hematologyRbcPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>HGB</th><td><input id="hematologyHgb" class="form-control form-control-sm" /></td><td class="text-nowrap">130-170 Nam / 120-160 Nữ</td><td class="text-nowrap">g/L</td><td><input id="hematologyHgbPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>HCT</th><td><input id="hematologyHct" class="form-control form-control-sm" /></td><td class="text-nowrap">40-50</td><td class="text-nowrap">%</td><td><input id="hematologyHctPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>MCV</th><td><input id="hematologyMcv" class="form-control form-control-sm" /></td><td class="text-nowrap">80-100</td><td class="text-nowrap">fL</td><td><input id="hematologyMcvPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>MCH</th><td><input id="hematologyMch" class="form-control form-control-sm" /></td><td class="text-nowrap">27-33</td><td class="text-nowrap">pg</td><td><input id="hematologyMchPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>MCHC</th><td><input id="hematologyMchc" class="form-control form-control-sm" /></td><td class="text-nowrap">320-360</td><td class="text-nowrap">g/L</td><td><input id="hematologyMchcPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>RDW-CV</th><td><input id="hematologyRdw" class="form-control form-control-sm" /></td><td class="text-nowrap">11.5-14.5</td><td class="text-nowrap">%</td><td><input id="hematologyRdwPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>RDW-SD</th><td><input id="hematologyRdwSd" class="form-control form-control-sm" /></td><td class="text-nowrap">35-56</td><td class="text-nowrap">fL</td><td><input id="hematologyRdwSdPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>PLT</th><td><input id="hematologyPlt" class="form-control form-control-sm" /></td><td class="text-nowrap">150-450</td><td class="text-nowrap">×10^9/L</td><td><input id="hematologyPltPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>MPV</th><td><input id="hematologyMpv" class="form-control form-control-sm" /></td><td class="text-nowrap">7.5-11.5</td><td class="text-nowrap">fL</td><td><input id="hematologyMpvPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>PDW</th><td><input id="hematologyPdw" class="form-control form-control-sm" /></td><td class="text-nowrap">9-17</td><td class="text-nowrap">fL</td><td><input id="hematologyPdwPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>PCT</th><td><input id="hematologyPct" class="form-control form-control-sm" /></td><td class="text-nowrap">0.19-0.39</td><td class="text-nowrap">%</td><td><input id="hematologyPctPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>PLCR</th><td><input id="hematologyPlcr" class="form-control form-control-sm" /></td><td class="text-nowrap">15-35</td><td class="text-nowrap">%</td><td><input id="hematologyPlcrPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>PLCC</th><td><input id="hematologyPlcc" class="form-control form-control-sm" /></td><td class="text-nowrap">15-35</td><td class="text-nowrap">×10^9/L</td><td><input id="hematologyPlccPrev" class="form-control form-control-sm" disabled /></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="tabBiochemistry">
+              <div class="table-responsive">
+                <table class="table table-borderless align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th>Thông số</th>
+                      <th>Kết quả mới</th>
+                      <th>Khoảng bình thường</th>
+                      <th>Đơn vị</th>
+                      <th>Tiền sử</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr><th>Glucose</th><td><input id="biochemistryGlucose" class="form-control form-control-sm" /></td><td class="text-nowrap">70-99</td><td class="text-nowrap">mg/dL</td><td><input id="biochemistryGlucosePrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>HbA1c</th><td><input id="biochemistryHba1c" class="form-control form-control-sm" /></td><td class="text-nowrap"><5.7</td><td class="text-nowrap">%</td><td><input id="biochemistryHba1cPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>Ure</th><td><input id="biochemistryUre" class="form-control form-control-sm" /></td><td class="text-nowrap">7-20</td><td class="text-nowrap">mg/dL</td><td><input id="biochemistryUrePrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>Creatinine</th><td><input id="biochemistryCreatinine" class="form-control form-control-sm" /></td><td class="text-nowrap">0.7-1.2</td><td class="text-nowrap">mg/dL</td><td><input id="biochemistryCreatininePrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>AST</th><td><input id="biochemistryAst" class="form-control form-control-sm" /></td><td class="text-nowrap">10-40</td><td class="text-nowrap">U/L</td><td><input id="biochemistryAstPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>ALT</th><td><input id="biochemistryAlt" class="form-control form-control-sm" /></td><td class="text-nowrap">7-56</td><td class="text-nowrap">U/L</td><td><input id="biochemistryAltPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>GGT</th><td><input id="biochemistryGgt" class="form-control form-control-sm" /></td><td class="text-nowrap">9-48</td><td class="text-nowrap">U/L</td><td><input id="biochemistryGgtPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>Bilirubin</th><td><input id="biochemistryBilirubin" class="form-control form-control-sm" /></td><td class="text-nowrap">0.1-1.2</td><td class="text-nowrap">mg/dL</td><td><input id="biochemistryBilirubinPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>Cholesterol</th><td><input id="biochemistryCholesterol" class="form-control form-control-sm" /></td><td class="text-nowrap"><200</td><td class="text-nowrap">mg/dL</td><td><input id="biochemistryCholesterolPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>Triglyceride</th><td><input id="biochemistryTriglyceride" class="form-control form-control-sm" /></td><td class="text-nowrap"><150</td><td class="text-nowrap">mg/dL</td><td><input id="biochemistryTriglyceridePrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>HDL</th><td><input id="biochemistryHdl" class="form-control form-control-sm" /></td><td class="text-nowrap">>40</td><td class="text-nowrap">mg/dL</td><td><input id="biochemistryHdlPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>LDL</th><td><input id="biochemistryLdl" class="form-control form-control-sm" /></td><td class="text-nowrap"><100</td><td class="text-nowrap">mg/dL</td><td><input id="biochemistryLdlPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>Acid Uric</th><td><input id="biochemistryUricAcid" class="form-control form-control-sm" /></td><td class="text-nowrap">3.5-7.2</td><td class="text-nowrap">mg/dL</td><td><input id="biochemistryUricAcidPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>Total Protein</th><td><input id="biochemistryTotalProtein" class="form-control form-control-sm" /></td><td class="text-nowrap">6.0-8.3</td><td class="text-nowrap">g/dL</td><td><input id="biochemistryTotalProteinPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>Albumin</th><td><input id="biochemistryAlbumin" class="form-control form-control-sm" /></td><td class="text-nowrap">3.5-5.0</td><td class="text-nowrap">g/dL</td><td><input id="biochemistryAlbuminPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>Globulin</th><td><input id="biochemistryGlobulin" class="form-control form-control-sm" /></td><td class="text-nowrap">2.0-3.5</td><td class="text-nowrap">g/dL</td><td><input id="biochemistryGlobulinPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>A/G Ratio</th><td><input id="biochemistryAgRatio" class="form-control form-control-sm" /></td><td class="text-nowrap">1.0-2.2</td><td class="text-nowrap"></td><td><input id="biochemistryAgRatioPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>LDH</th><td><input id="biochemistryLdh" class="form-control form-control-sm" /></td><td class="text-nowrap">140-280</td><td class="text-nowrap">U/L</td><td><input id="biochemistryLdhPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>Calcium</th><td><input id="biochemistryCalcium" class="form-control form-control-sm" /></td><td class="text-nowrap">8.4-10.2</td><td class="text-nowrap">mg/dL</td><td><input id="biochemistryCalciumPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>Phosphate</th><td><input id="biochemistryPhosphate" class="form-control form-control-sm" /></td><td class="text-nowrap">2.5-4.5</td><td class="text-nowrap">mg/dL</td><td><input id="biochemistryPhosphatePrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>Magnesium</th><td><input id="biochemistryMagnesium" class="form-control form-control-sm" /></td><td class="text-nowrap">1.7-2.2</td><td class="text-nowrap">mg/dL</td><td><input id="biochemistryMagnesiumPrev" class="form-control form-control-sm" disabled /></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="tabImmunology">
+              <div class="table-responsive">
+                <table class="table table-borderless align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th>Thông số</th>
+                      <th>Kết quả mới</th>
+                      <th>Khoảng bình thường</th>
+                      <th>Đơn vị</th>
+                      <th>Tiền sử</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr><th>HBsAg</th><td><input id="immunologyHbsag" class="form-control form-control-sm" /></td><td class="text-nowrap">Negative</td><td class="text-nowrap"></td><td><input id="immunologyHbsagPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>Anti-HBs</th><td><input id="immunologyAntiHbs" class="form-control form-control-sm" /></td><td class="text-nowrap">≥10</td><td class="text-nowrap">mIU/mL</td><td><input id="immunologyAntiHbsPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>HCV</th><td><input id="immunologyHcv" class="form-control form-control-sm" /></td><td class="text-nowrap">Negative</td><td class="text-nowrap"></td><td><input id="immunologyHcvPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>HIV</th><td><input id="immunologyHiv" class="form-control form-control-sm" /></td><td class="text-nowrap">Negative</td><td class="text-nowrap"></td><td><input id="immunologyHivPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>AFP</th><td><input id="immunologyAfp" class="form-control form-control-sm" /></td><td class="text-nowrap"><10</td><td class="text-nowrap">ng/mL</td><td><input id="immunologyAfpPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>CEA</th><td><input id="immunologyCea" class="form-control form-control-sm" /></td><td class="text-nowrap"><5</td><td class="text-nowrap">ng/mL</td><td><input id="immunologyCeaPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>PSA</th><td><input id="immunologyPsa" class="form-control form-control-sm" /></td><td class="text-nowrap"><4</td><td class="text-nowrap">ng/mL</td><td><input id="immunologyPsaPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>CA125</th><td><input id="immunologyCa125" class="form-control form-control-sm" /></td><td class="text-nowrap"><35</td><td class="text-nowrap">U/mL</td><td><input id="immunologyCa125Prev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>CA19-9</th><td><input id="immunologyCa199" class="form-control form-control-sm" /></td><td class="text-nowrap"><37</td><td class="text-nowrap">U/mL</td><td><input id="immunologyCa199Prev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>CA15-3</th><td><input id="immunologyCa153" class="form-control form-control-sm" /></td><td class="text-nowrap"><30</td><td class="text-nowrap">U/mL</td><td><input id="immunologyCa153Prev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>CRP</th><td><input id="immunologyCrp" class="form-control form-control-sm" /></td><td class="text-nowrap"><5</td><td class="text-nowrap">mg/L</td><td><input id="immunologyCrpPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>RF</th><td><input id="immunologyRf" class="form-control form-control-sm" /></td><td class="text-nowrap"><14</td><td class="text-nowrap">IU/mL</td><td><input id="immunologyRfPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>ANA</th><td><input id="immunologyAna" class="form-control form-control-sm" /></td><td class="text-nowrap">Negative</td><td class="text-nowrap"></td><td><input id="immunologyAnaPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>IgG</th><td><input id="immunologyIgg" class="form-control form-control-sm" /></td><td class="text-nowrap">700-1600</td><td class="text-nowrap">mg/dL</td><td><input id="immunologyIggPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>IgM</th><td><input id="immunologyIgm" class="form-control form-control-sm" /></td><td class="text-nowrap">40-230</td><td class="text-nowrap">mg/dL</td><td><input id="immunologyIgmPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>IgA</th><td><input id="immunologyIga" class="form-control form-control-sm" /></td><td class="text-nowrap">70-400</td><td class="text-nowrap">mg/dL</td><td><input id="immunologyIgaPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>TSH</th><td><input id="immunologyTsh" class="form-control form-control-sm" /></td><td class="text-nowrap">0.4-4.0</td><td class="text-nowrap">mIU/L</td><td><input id="immunologyTshPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>T3</th><td><input id="immunologyT3" class="form-control form-control-sm" /></td><td class="text-nowrap">0.8-2.0</td><td class="text-nowrap">ng/mL</td><td><input id="immunologyT3Prev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>T4</th><td><input id="immunologyT4" class="form-control form-control-sm" /></td><td class="text-nowrap">5-12</td><td class="text-nowrap">µg/dL</td><td><input id="immunologyT4Prev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>FT3</th><td><input id="immunologyFt3" class="form-control form-control-sm" /></td><td class="text-nowrap">2.3-4.2</td><td class="text-nowrap">pg/mL</td><td><input id="immunologyFt3Prev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>FT4</th><td><input id="immunologyFt4" class="form-control form-control-sm" /></td><td class="text-nowrap">0.8-1.8</td><td class="text-nowrap">ng/dL</td><td><input id="immunologyFt4Prev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>Cortisol</th><td><input id="immunologyCortisol" class="form-control form-control-sm" /></td><td class="text-nowrap">5-25</td><td class="text-nowrap">µg/dL</td><td><input id="immunologyCortisolPrev" class="form-control form-control-sm" disabled /></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="tabCoagulation">
+              <div class="table-responsive">
+                <table class="table table-borderless align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th>Thông số</th>
+                      <th>Kết quả mới</th>
+                      <th>Khoảng bình thường</th>
+                      <th>Đơn vị</th>
+                      <th>Tiền sử</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr><th>PT (s)</th><td><input id="coagulationPtS" class="form-control form-control-sm" /></td><td class="text-nowrap">11-15</td><td class="text-nowrap">s</td><td><input id="coagulationPtSPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>PT (%)</th><td><input id="coagulationPtPercent" class="form-control form-control-sm" /></td><td class="text-nowrap">70-120</td><td class="text-nowrap">%</td><td><input id="coagulationPtPercentPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>INR</th><td><input id="coagulationInr" class="form-control form-control-sm" /></td><td class="text-nowrap">0.8-1.2</td><td class="text-nowrap"></td><td><input id="coagulationInrPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>APTT</th><td><input id="coagulationAptt" class="form-control form-control-sm" /></td><td class="text-nowrap">25-40</td><td class="text-nowrap">s</td><td><input id="coagulationApttPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>Fibrinogen</th><td><input id="coagulationFibrinogen" class="form-control form-control-sm" /></td><td class="text-nowrap">200-400</td><td class="text-nowrap">mg/dL</td><td><input id="coagulationFibrinogenPrev" class="form-control form-control-sm" disabled /></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="tabUrine">
+              <div class="table-responsive">
+                <table class="table table-borderless align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th>Thông số</th>
+                      <th>Kết quả mới</th>
+                      <th>Khoảng bình thường</th>
+                      <th>Đơn vị</th>
+                      <th>Tiền sử</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr><th>LEU</th><td><input id="urineLeu" class="form-control form-control-sm" /></td><td class="text-nowrap">Negative</td><td class="text-nowrap"></td><td><input id="urineLeuPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>NIT</th><td><input id="urineNit" class="form-control form-control-sm" /></td><td class="text-nowrap">Negative</td><td class="text-nowrap"></td><td><input id="urineNitPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>UBG</th><td><input id="urineUbg" class="form-control form-control-sm" /></td><td class="text-nowrap">Negative</td><td class="text-nowrap"></td><td><input id="urineUbgPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>BIL</th><td><input id="urineBil" class="form-control form-control-sm" /></td><td class="text-nowrap">Negative</td><td class="text-nowrap"></td><td><input id="urineBilPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>PRO</th><td><input id="urinePro" class="form-control form-control-sm" /></td><td class="text-nowrap">Negative</td><td class="text-nowrap"></td><td><input id="urineProPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>pH</th><td><input id="urinePh" class="form-control form-control-sm" /></td><td class="text-nowrap">4.5-8.0</td><td class="text-nowrap"></td><td><input id="urinePhPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>BLD</th><td><input id="urineBld" class="form-control form-control-sm" /></td><td class="text-nowrap">Negative</td><td class="text-nowrap"></td><td><input id="urineBldPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>KET</th><td><input id="urineKet" class="form-control form-control-sm" /></td><td class="text-nowrap">Negative</td><td class="text-nowrap"></td><td><input id="urineKetPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>GLU</th><td><input id="urineGlu" class="form-control form-control-sm" /></td><td class="text-nowrap">Negative</td><td class="text-nowrap"></td><td><input id="urineGluPrev" class="form-control form-control-sm" disabled /></td></tr>
+                    <tr><th>SG</th><td><input id="urineSg" class="form-control form-control-sm" /></td><td class="text-nowrap">1.005-1.030</td><td class="text-nowrap"></td><td><input id="urineSgPrev" class="form-control form-control-sm" disabled /></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="tabConclusionReminder">
+              <div class="row g-3 mb-4">
+                <div class="col-12"><h5>Kết luận khám</h5></div>
+                <div class="col-md-6"><label class="form-label">Thời gian</label><input id="conclusionTime" type="time" class="form-control" /></div>
+                <div class="col-12"><label class="form-label">Chẩn đoán</label><textarea id="conclusionDiagnosis" class="form-control" rows="2"></textarea></div>
+                <div class="col-12"><label class="form-label">Hướng điều trị</label><textarea id="conclusionTreatment" class="form-control" rows="2"></textarea></div>
+                <div class="col-12"><label class="form-label">Ghi chú bác sĩ</label><textarea id="conclusionNote" class="form-control" rows="2"></textarea></div>
+                <div class="col-12 text-end"><button class="btn btn-success" id="saveConclusionButton">Lưu kết luận</button></div>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="tabHistory">
+              <div class="mb-3">
+                <div><p class="text-muted mb-0">Ghi chú từng lần khám của bệnh nhân.</p></div>
+              </div>
+              <div class="table-responsive mb-3">
+                <table class="table table-sm table-hover align-middle mb-0">
+                  <thead class="table-secondary"><tr><th>Ngày khám</th><th>Chẩn đoán</th><th>Kết quả</th><th>Ghi chú</th><th>Hành động</th></tr></thead>
+                  <tbody id="historyTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="reminderSection" class="mb-5">
+        <div class="mb-3">
+          <h2 class="h4 mb-1">Tái khám</h2>
+        </div>
+        <div class="row g-3 mb-3 align-items-end">
+          <div class="col-12 col-md-6 col-lg-4">
+            <label class="form-label small text-muted">Tìm kiếm bệnh nhân</label>
+            <input id="reminderSearchInput" type="text" class="form-control" placeholder="Mã BN hoặc họ tên" />
+          </div>
+          <div class="col-12 col-md-6 col-lg-4">
+            <label class="form-label small text-muted">Trạng thái</label>
+            <select id="reminderStatusSelect" class="form-select">
+              <option value="all">Tất cả</option>
+              <option value="today">Hôm nay</option>
+              <option value="upcoming">Sắp tới hạn</option>
+              <option value="overdue">Quá hạn</option>
+              <option value="no-schedule">Không có lịch</option>
+              <option value="contacted">Đã liên hệ</option>
+              <option value="done">Đã khám</option>
+            </select>
+          </div>
+          <div class="col-12 col-lg-4">
+            <button id="clearReminderFilters" class="btn btn-outline-secondary w-100">Xóa bộ lọc</button>
+          </div>
+        </div>
+        <div class="summary-card shadow-sm p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-secondary">
+                <tr>
+                  <th>Mã BN</th>
+                  <th>Họ tên</th>
+                  <th>Ngày tái khám</th>
+                  <th>Nội dung</th>
+                  <th>Trạng thái</th>
+                  <th>Hành động</th>
+                </tr>
+              </thead>
+              <tbody id="reminderTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings Section -->
+      <section id="settingsSection" class="mb-5" style="display: none;">
+        <div class="mb-3">
+          <h2 class="h4 mb-1">Cài đặt</h2>
+          <p class="text-muted mb-0">Thiết lập dữ liệu và xuất nhập hồ sơ bệnh nhân.</p>
+        </div>
+        <div class="row g-3">
+          <div class="col-12 col-lg-6">
+            <div class="summary-card shadow-sm p-4">
+              <h5 class="mb-3">Nhập dữ liệu</h5>
+              <p class="text-muted small mb-3">Đồng bộ bệnh nhân và kết quả xét nghiệm từ file Excel/CSV.</p>
+              <div class="mb-3">
+                <label class="form-label small">File bệnh nhân</label>
+                <input id="importPatientsInput" type="file" accept=".xlsx,.xls,.csv" class="form-control form-control-sm" />
+              </div>
+              <button id="importPatientsButton" type="button" class="btn btn-primary btn-sm w-100 mb-2">Import bệnh nhân</button>
+              <div class="mb-3">
+                <label class="form-label small">File kết quả</label>
+                <input id="importResultsInput" type="file" accept=".xlsx,.xls,.csv" class="form-control form-control-sm" />
+              </div>
+              <button id="importResultsButton" type="button" class="btn btn-secondary btn-sm w-100 mb-2">Import kết quả</button>
+              <div class="mb-3">
+                <label class="form-label small">Excel (bệnh nhân & kết quả)</label>
+                <input id="importExcelInput" type="file" accept=".xlsx,.xls,.csv" class="form-control form-control-sm" />
+              </div>
+              <button class="btn btn-primary btn-sm w-100" id="importExcelButton">Đồng bộ Excel</button>
+            </div>
+          </div>
+          <div class="col-12 col-lg-6">
+            <div class="summary-card shadow-sm p-4">
+              <h5 class="mb-3">Xuất dữ liệu</h5>
+              <p class="text-muted small mb-3">Chọn dữ liệu muốn xuất ra file Excel.</p>
+              <div class="mb-3">
+                <div class="form-check form-check-sm">
+                  <input class="form-check-input" type="checkbox" id="exportInfoCheckbox" checked>
+                  <label class="form-check-label small" for="exportInfoCheckbox">Thông tin bệnh nhân</label>
+                </div>
+                <div class="form-check form-check-sm">
+                  <input class="form-check-input" type="checkbox" id="exportHematologyCheckbox" checked>
+                  <label class="form-check-label small" for="exportHematologyCheckbox">Công thức máu</label>
+                </div>
+                <div class="form-check form-check-sm">
+                  <input class="form-check-input" type="checkbox" id="exportBiochemistryCheckbox" checked>
+                  <label class="form-check-label small" for="exportBiochemistryCheckbox">Hóa sinh</label>
+                </div>
+                <div class="form-check form-check-sm">
+                  <input class="form-check-input" type="checkbox" id="exportImmunologyCheckbox" checked>
+                  <label class="form-check-label small" for="exportImmunologyCheckbox">Miễn dịch</label>
+                </div>
+                <div class="form-check form-check-sm">
+                  <input class="form-check-input" type="checkbox" id="exportUrineCheckbox" checked>
+                  <label class="form-check-label small" for="exportUrineCheckbox">Nước tiểu</label>
+                </div>
+              </div>
+              <button type="button" class="btn btn-success btn-sm w-100" id="exportExcelButton">Xuất Excel</button>
+              <hr />
+              <button type="button" class="btn btn-outline-danger btn-sm w-100" id="logoutButton">Đăng xuất</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal fade" id="patientModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-fullscreen-lg-down">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="patientModalTitle">Thêm bệnh nhân</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="patientForm">
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label">Mã BN</label>
+                <input id="patientId" class="form-control" required />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Họ tên</label>
+                <input id="fullName" class="form-control" required />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Ngày sinh</label>
+                <input id="birthDate" type="date" class="form-control" required />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Giới tính</label>
+                <select id="gender" class="form-select" required>
+                  <option value="Nam">Nam</option>
+                  <option value="Nữ">Nữ</option>
+                  <option value="Khác">Khác</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Mã BHYT</label>
+                <input id="healthInsurance" class="form-control" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">CCCD</label>
+                <input id="cccd" class="form-control" required />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Số điện thoại</label>
+                <input id="phone" type="tel" class="form-control" required />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Dân tộc</label>
+                <input id="ethnicity" class="form-control" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Nghề nghiệp</label>
+                <input id="job" class="form-control" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Địa chỉ</label>
+                <input id="address" class="form-control" />
+              </div>
+              <div class="col-12">
+                <label class="form-label">Ghi chú</label>
+                <textarea id="note" class="form-control" rows="3"></textarea>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Ngày khám gần nhất</label>
+                <input id="lastExamDate" type="date" class="form-control" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Lịch hẹn tiếp theo</label>
+                <input id="nextAppointment" type="date" class="form-control" />
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Huỷ</button>
+            <button type="submit" class="btn btn-primary">Lưu bệnh nhân</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Modal -->
+  <div class="modal fade" id="statsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="statsModalTitle">Danh sách</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0">
+              <thead class="table-secondary"><tr><th>Mã BN</th><th>Họ tên</th><th>SĐT</th><th>Lịch hẹn</th><th>Trạng thái</th></tr></thead>
+              <tbody id="statsModalBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Revisit Modal -->
+  <div class="modal fade" id="quickRevisitModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Tái khám nhanh cho các bệnh nhân đã chọn</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Chọn kiểu lịch tái khám</label>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="quickRevisitMode" id="quickRevisitModeMonths" value="months" checked>
+              <label class="form-check-label" for="quickRevisitModeMonths">Số tháng sau</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="quickRevisitMode" id="quickRevisitModeDate" value="date">
+              <label class="form-check-label" for="quickRevisitModeDate">Ngày cụ thể</label>
+            </div>
+          </div>
+          <div id="quickRevisitMonthsGroup" class="mb-3">
+            <label class="form-label">Số tháng sau</label>
+            <input id="quickRevisitMonths" type="number" min="1" max="24" class="form-control" value="1" />
+            <div class="form-text">Nhập số tháng (ví dụ 1 = sau 1 tháng)</div>
+          </div>
+          <div id="quickRevisitDateGroup" class="mb-3 d-none">
+            <label class="form-label">Ngày tái khám chính xác</label>
+            <input id="quickRevisitDate" type="date" class="form-control" />
+            <div class="form-text">Chọn ngày tái khám chính xác cho các bệnh nhân đã chọn.</div>
+          </div>
+          <p class="small text-muted">Hành động sẽ thêm 1 nhắc tái khám cho mỗi bệnh nhân đã chọn và cập nhật "Lịch hẹn tiếp theo".</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Huỷ</button>
+          <button type="button" id="quickRevisitConfirm" class="btn btn-primary">Áp dụng</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script src="script.js"></script>
+  <script src="update.js"></script>
+  <script type="module" src="firebase.js"></script>
+  <script>
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js').catch(err => {
+        console.log('Service Worker registration failed:', err);
+      });
+    }
+  </script>
+</body>
+</html>
